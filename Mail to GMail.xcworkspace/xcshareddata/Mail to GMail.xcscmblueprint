@@ -1,0 +1,32 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "727F168D285DA4627BD81FF3D4D0DDAC1FFB44AD",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "96549f0e-82d1-4b9e-a3f5-8666e52e6dba++4964" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "96549f0e-82d1-4b9e-a3f5-8666e52e6dba++4964" : 0,
+    "727F168D285DA4627BD81FF3D4D0DDAC1FFB44AD" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "1F51DB71-8F29-4A4F-B664-945BD672C191",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "96549f0e-82d1-4b9e-a3f5-8666e52e6dba++4964" : "",
+    "727F168D285DA4627BD81FF3D4D0DDAC1FFB44AD" : "opagrp-email2gmail\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "Mail to GMail",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "Mail to GMail.xcworkspace",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/alexeypro\/opagrp-email2gmail.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "727F168D285DA4627BD81FF3D4D0DDAC1FFB44AD"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/188.226.133.193\/svn\/GutenbergzRepo",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "96549f0e-82d1-4b9e-a3f5-8666e52e6dba++4964"
+    }
+  ]
+}
