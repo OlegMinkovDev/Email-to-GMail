@@ -58,19 +58,17 @@ class ViewController: UIViewController, UITextFieldDelegate {
         
         ARSLineProgress.show()
         
-        self.appDelegate.currentServerName = self.serverNameTextField.text!
+        appDelegate.currentServerName = self.serverNameTextField.text!
         
-        if (self.serverNameTextField.text?.contains("imap"))! {
+        if (serverNameTextField.text?.contains("imap"))! {
             
-            self.serverType = "IMAP"
-            
-            self.getAllIMAPFolders()
+            serverType = "IMAP"
+            getAllIMAPFolders()
             
         } else {
             
-            self.serverType = "POP"
-         
-            self.getAllPOPFolders()
+            serverType = "POP"
+            getAllPOPMessages()
         }
     }
     
@@ -198,7 +196,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
         })
     }
     
-    func getAllPOPFolders() {
+    func getAllPOPMessages() {
         
         self.appDelegate.popSession = MCOPOPSession()
         self.appDelegate.popSession.hostname = self.serverNameTextField.text
@@ -207,7 +205,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
         self.appDelegate.popSession.port = UInt32(self.portTextField.text!)!
         self.appDelegate.popSession.authType = .saslPlain
         self.appDelegate.popSession.connectionType = .TLS
-       
+        
         let operation = self.appDelegate.popSession.fetchMessagesOperation()
         operation?.start({ (error, messages) in
             

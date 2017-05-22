@@ -25,6 +25,7 @@ class CopyMoveViewController: UIViewController {
     var sourceFolder = String()
     var targetFolder = GTLRGmail_Label()
     var allImapMessages = [MCOIMAPMessage]()
+    var allPopMessages = [MCOPOPMessageInfo]()
     var action = Action.Move
     var failure = Failure.Retry
     var serverType = String()
@@ -32,7 +33,6 @@ class CopyMoveViewController: UIViewController {
 	let dateFormatter = DateFormatter()
     var parser: MCOMessageParser!
     var messageUID = UInt32()
-    var partOfMessages = Int()
     
     private var mail = Mail()
     private var ldProgressView = LDProgressView()
@@ -41,8 +41,12 @@ class CopyMoveViewController: UIViewController {
     private var skippedCount = 0
     private var retryAndSkipCount = 3
     private var successfullUdidsArray:[UInt32]? = [UInt32]()
-    private var partMessageIndex = 0
+    private var partMessageIndex = 1
     private var allMessageCount = 0
+    
+    private var partOfMessages = 10 // choose desired count
+    private var startMessagesIndex = 1
+    private var endMessagesIndex = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -71,6 +75,8 @@ class CopyMoveViewController: UIViewController {
             allMessageCount = appDelegate.allPopMessages.count
             currentMessageLabel.text = "\(successfulCount) out of \(appDelegate.allPopMessages.count)"
         }
+        
+        endMessagesIndex = partOfMessages
         
         parseMessages()
     }
@@ -177,15 +183,67 @@ class CopyMoveViewController: UIViewController {
 		return Data()
     }
     
+    func loadIMAPMessages() {
+        
+        partMessageIndex += partOfMessages
+        
+        let requestKind:MCOIMAPMessagesRequestKind = [.headers, .structure, .extraHeaders, .internalDate, .fullHeaders] // flags, structure
+        
+        let uids = MCOIndexSet.init(range: MCORangeMake(UInt64(partMessageIndex), UInt64(partOfMessages - 1)))
+        
+        let operation = appDelegate.imapSession.fetchMessagesByNumberOperation(withFolder: sourceFolder, requestKind: requestKind, numbers: uids)
+        
+        operation?.start({ [weak self] (error, fetchedMessages, vanishedMessages) in
+            
+            if error == nil
+            {
+                if let messages = fetchedMessages
+                {
+                    guard messages.count != 0 else {
+                        
+                        BFLog("parseMessages | self.allImapMessages.count ")
+                        
+                        self!.allPrecessDoneLabel.isHidden = false
+                        self!.successfullMessagesLabel.isHidden = false
+                        self!.failureMessagesLabel.isHidden = false
+                        self!.skippedMessagesLabel.isHidden = false
+                        
+                        self!.successfullMessagesLabel.text = "Succesfull messages: \(self!.successfulCount)"
+                        self!.failureMessagesLabel.text = "Failure messages: \(self!.allMessageCount - self!.successfulCount - self!.skippedCount)"
+                        self!.skippedMessagesLabel.text = "Skipped messages: \(self!.skippedCount)"
+                        
+                        return
+                    }
+                    
+                    self!.allMessageCount += messages.count
+                    self?.globalMessageIndex = 0
+                    self?.allImapMessages = messages as! [MCOIMAPMessage]
+                    
+                    BFLog("Current coping | uids: \(uids!)")
+                    
+                    self?.updateUIElements()
+                    self?.parseMessages()
+                }
+            }
+            else
+            {
+                BFLog("Error fetches messages: \(error!.localizedDescription)")
+            }
+        })
+    }
+    
+    func loadPOPMessages() {
+        
+        
+        
+        
+    }
+    
     func parseMessages() {
 		
         if !stopFlag {
             
-            let requestKind:MCOIMAPMessagesRequestKind = [.headers, .structure, .extraHeaders, .internalDate, .fullHeaders] // flags, structure
-			
             if serverType == "IMAP" {
-                
-                
                 
 				if globalMessageIndex < allImapMessages.count {
 					
@@ -242,54 +300,7 @@ class CopyMoveViewController: UIViewController {
                     }
 					
 				} else {
-                    
-                    partMessageIndex += partOfMessages
-                    
-                    let uids = MCOIndexSet.init(range: MCORangeMake(UInt64(partMessageIndex), UInt64(partOfMessages - 1)))
-                    
-                    let operation = appDelegate.imapSession.fetchMessagesByNumberOperation(withFolder: sourceFolder, requestKind: requestKind, numbers: uids)
-                    
-                    operation?.start({ [weak self] (error, fetchedMessages, vanishedMessages) in
-                        
-                        if error == nil
-                        {
-                            if let messages = fetchedMessages
-                            {
-                                guard messages.count != 0 else {
-                                    
-                                    BFLog("parseMessages | self.allImapMessages.count ")
-                                     
-                                    self!.allPrecessDoneLabel.isHidden = false
-                                    self!.successfullMessagesLabel.isHidden = false
-                                    self!.failureMessagesLabel.isHidden = false
-                                    self!.skippedMessagesLabel.isHidden = false
-                                     
-                                    self!.successfullMessagesLabel.text = "Succesfull messages: \(self!.successfulCount)"
-                                    self!.failureMessagesLabel.text = "Failure messages: \(self!.allMessageCount - self!.successfulCount - self!.skippedCount)"
-                                    self!.skippedMessagesLabel.text = "Skipped messages: \(self!.skippedCount)"
-                                    
-                                    return
-                                }
-                                
-                                self!.allMessageCount += messages.count
-                                self?.globalMessageIndex = 0
-                                self?.allImapMessages = messages as! [MCOIMAPMessage]
-                                
-                                BFLog("Current coping | uids: \(uids!)")
-                                
-                                self?.updateUIElements()
-                                self?.parseMessages()
-                            }
-                        }
-                        else
-                        {
-                            BFLog("Error fetches messages: \(error!.localizedDescription)")
-                        }
-                    })
-                    
-                
-					
-					
+                    loadIMAPMessages()
 				}
 				
 			} else {
@@ -318,7 +329,22 @@ class CopyMoveViewController: UIViewController {
                                 if let data = messageData {
                                     if let pars = MCOMessageParser(data: data) {
                                         self?.parser = pars
-                                        self?.parseMesage()
+                                        
+                                        if (self?.parser.attachments().count)! > 0 {
+                                            
+                                            let allAttachmentSize = self?.getAllAttachmentSize()
+                                            if allAttachmentSize! > 20000000 {
+                                                
+                                                self?.skippedCount += 1
+                                                self?.updateUIElements()
+                                                self?.parseMessages()
+                                            } else {
+                                                self?.parseMesage()
+                                            }
+                                        } else {
+                                            self?.parseMesage()
+                                        }
+                                        
                                     } else {
                                         
                                         BFLog("fetchMessageOperation | parser is Nil")
@@ -703,7 +729,8 @@ class CopyMoveViewController: UIViewController {
             
             if self.serverType == "IMAP" {
                 percent = (CGFloat(self.globalMessageIndex * 100) / CGFloat(self.allImapMessages.count)) / 100
-                self.currentMessageLabel.text = "\(self.globalMessageIndex) out of \(self.allImapMessages.count)"
+                self.currentMessageLabel.text = "\(self.globalMessageIndex + self.partMessageIndex - self.partOfMessages) out of \(self.partMessageIndex)"
+
             } else {
                 percent = (CGFloat(self.globalMessageIndex * 100) / CGFloat(self.appDelegate.allPopMessages.count)) / 100
                 self.currentMessageLabel.text = "\(self.globalMessageIndex) out of \(self.appDelegate.allPopMessages.count)"

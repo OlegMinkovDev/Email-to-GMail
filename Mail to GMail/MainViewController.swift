@@ -47,15 +47,12 @@ class MainViewController: UIViewController {
 	@IBOutlet weak var buttonStart: UIButton!
     
     var appDelegate = AppDelegate()
-    
     var sourceFolder = String()
     var targetFolder = GTLRGmail_Label()
     var serverType = String()
     
-    private var allIMAPMessages = [MCOIMAPMessage]()
     private var action: String? = String()
     private var failure: String? = String()
-    private var partOfMessages = 10
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -77,7 +74,7 @@ class MainViewController: UIViewController {
         super.viewDidAppear(animated)
 		
 		showLoader(withLabel: true)
-        self.getAllMessages()
+        getAllMessages()
     }
     
     @IBAction func Start(_ sender: Any)
@@ -113,8 +110,8 @@ class MainViewController: UIViewController {
 	func showLoader(withLabel: Bool) {
         
 		ARSLineProgress.show()
-		progressLabel.text = "Processed: 0"
-		progressLabel.isHidden = !withLabel
+		//progressLabel.text = "Processed: 0"
+		//progressLabel.isHidden = !withLabel
 	}
 	
 	func hideLoader() {
@@ -127,53 +124,18 @@ class MainViewController: UIViewController {
 		BFLog("getAllMessages | Start")
 		
         if self.serverType == "IMAP" {
-        
-            let requestKind:MCOIMAPMessagesRequestKind = [.headers, .structure, .extraHeaders, .internalDate, .fullHeaders] // flags, structure
-            let uids = MCOIndexSet.init(range: MCORangeMake(1, UInt64(partOfMessages - 1)))
             
-            let operation = appDelegate.imapSession.fetchMessagesByNumberOperation(withFolder: sourceFolder, requestKind: requestKind, numbers: uids)
-			
-			operation?.progress = { [weak self] number in
-				self?.progressLabel.text = "Processed: \(number)"
-			}
-			
-			BFLog("Send request to fetched messages")
-			
-            operation?.start({ [weak self] (error, fetchedMessages, vanishedMessages) in
+            let operation = self.appDelegate.imapSession.folderStatusOperation("INBOX")
+            operation?.start({ (error, folderStatus) in
                 
-                if error == nil
-				{
-					if let messages = fetchedMessages
-					{
-						self?.allIMAPMessages = messages as! [MCOIMAPMessage]
-						
-						BFLog("getAllMessages | Receive: \(self?.allIMAPMessages.count ?? 0)")
-                        
-                        if self!.allIMAPMessages.count >= self!.partOfMessages {
-                            self?.totalMessagesLabel.text = "More then \(self!.partOfMessages) letters"
-                        } else {
-                            self?.totalMessagesLabel.text = self?.allIMAPMessages.count.description
-                        }
-					}
-					
-                    self?.hideLoader()
-					self?.buttonStart.isUserInteractionEnabled = true
+                guard let status = folderStatus else {
+                    BFLog("Error folder status: \(error!.localizedDescription)")
+                    self.hideLoader()
+                    return
                 }
-				else
-				{
-                    print("Error fetches messages: \(error!.localizedDescription)")
-					BFLog("Error fetches messages: \(error!.localizedDescription)")
-					
-					self?.hideLoader()
-					self?.buttonStart.isUserInteractionEnabled = false
-					
-					let alertController = UIAlertController(title: "Error", message: error!.localizedDescription, preferredStyle: .alert)
-					let skipAction = UIAlertAction(title: "OK", style: .default, handler: { (skip) in
-						self?.navigationController?.popViewController(animated: true)
-					})
-					alertController.addAction(skipAction)
-					self?.present(alertController, animated: true, completion: nil)
-                }
+                
+                self.hideLoader()
+                self.totalMessagesLabel.text = String(status.messageCount)
             })
 			
         } else {
@@ -181,14 +143,8 @@ class MainViewController: UIViewController {
             DispatchQueue.main.async {
 				
 				BFLog("getAllMessages | Not IMAP")
-				
-                if self.appDelegate.allPopMessages.count >= self.partOfMessages {
-                    self.totalMessagesLabel.text = "More then \(self.partOfMessages) letters"
-                } else {
-                    self.totalMessagesLabel.text = self.appDelegate.allPopMessages.count.description
-                }
                 
-                self.totalMessagesLabel.text = String(self.appDelegate.allPopMessages.count)
+                self.totalMessagesLabel.text = self.appDelegate.allPopMessages.count.description
                 self.hideLoader()
             }
         }
@@ -209,9 +165,7 @@ class MainViewController: UIViewController {
         if let viewController = segue.destination as? CopyMoveViewController {
             viewController.targetFolder = self.targetFolder
             viewController.sourceFolder = self.sourceFolder
-            viewController.allImapMessages = self.allIMAPMessages
             viewController.serverType = self.serverType
-            viewController.partOfMessages = self.partOfMessages
             
             if failure! == "RETRY" {
                 viewController.failure = .Retry
