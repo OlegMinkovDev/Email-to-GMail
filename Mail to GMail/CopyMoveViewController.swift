@@ -96,6 +96,21 @@ class CopyMoveViewController: UIViewController {
 		stopFlag = true
 	}
     
+    @IBAction func goBack(_ sender: UIBarButtonItem) {
+    
+        let alertController = UIAlertController(title: "Message", message: "If you continue, the whole process will be stopped", preferredStyle: .alert)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+        let okAction = UIAlertAction(title: "OK", style: .default) { (_) in
+            self.navigationController?.popViewController(animated: true)
+        }
+        
+        alertController.addAction(cancelAction)
+        alertController.addAction(okAction)
+        
+        present(alertController, animated: true, completion: nil)
+    }
+    
     func getFormattedRawMessage(parser: MCOMessageParser, mail: Mail) -> Data
     {
 		BFLog("getFormattedRawMessage | Start")
