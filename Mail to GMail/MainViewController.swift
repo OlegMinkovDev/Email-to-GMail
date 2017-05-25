@@ -73,8 +73,20 @@ class MainViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 		
-		showLoader(withLabel: true)
-        getAllMessages()
+        let stoppedMessageID = UserDefaults.standard.integer(forKey: "stoppedMessageID")
+        
+        if stoppedMessageID != 0 {
+            
+            totalMessagesLabel.textColor = .red
+            totalMessagesLabel.text = "Stopped at \(stoppedMessageID) message id"
+            UserDefaults.standard.set(0, forKey: "stoppedMessageID")
+        
+        } else {
+            
+            totalMessagesLabel.textColor = .black
+            showLoader(withLabel: true)
+            getAllMessages()
+        }
     }
     
     @IBAction func Start(_ sender: Any)

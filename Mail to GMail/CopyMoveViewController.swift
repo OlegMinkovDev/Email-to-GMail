@@ -68,6 +68,9 @@ class CopyMoveViewController: UIViewController {
 		
 		dateFormatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
         
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self, selector: #selector(appMovedToActive), name: Notification.Name.UIApplicationDidBecomeActive, object: nil)
+        
         if serverType == "IMAP" {
             allMessageCount = allImapMessages.count
             currentMessageLabel.text = "\(successfulCount) out of \(allImapMessages.count)"
@@ -109,6 +112,13 @@ class CopyMoveViewController: UIViewController {
         alertController.addAction(okAction)
         
         present(alertController, animated: true, completion: nil)
+    }
+    
+    func appMovedToActive() {
+        print("move to active")
+        
+        UserDefaults.standard.set(Int(messageUID), forKey: "stoppedMessageID")  // integer(forKey: "stoppedMessageID")
+        navigationController?.popViewController(animated: true)
     }
     
     func getFormattedRawMessage(parser: MCOMessageParser, mail: Mail) -> Data
